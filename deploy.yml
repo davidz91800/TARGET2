@@ -1,0 +1,48 @@
+name: Deploy to GitHub Pages
+
+on:
+  push: # Se déclenche à chaque push sur la branche principale
+    branches:
+      - main # Ou 'master', ou la branche que vous utilisez comme principale
+  workflow_dispatch: # Permet de déclencher manuellement le workflow depuis l'interface GitHub
+
+# Autorisations pour que l'action puisse écrire sur la branche gh-pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # Utilise la dernière version stable d'Ubuntu
+    
+    environment: # Nécessaire pour le déploiement sur GitHub Pages
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Action pour récupérer votre code
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Spécifiez une version LTS de Node.js
+
+      - name: Install dependencies
+        run: npm ci # Utilise package-lock.json pour une installation déterministe
+
+      - name: Build project
+        run: npm run build # Exécute le script de build de votre package.json
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3 # Action pour uploader les fichiers buildés
+        with:
+          path: ./dist # Le dossier contenant votre site buildé (doit correspondre à outDir dans vite.config.ts)
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # Action pour déployer
